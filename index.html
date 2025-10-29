@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Purple Fireworks</title>
+<style>
+  html, body {
+    margin: 0;
+    padding: 0;
+    background: transparent;
+    overflow: hidden;
+    height: 100%;
+  }
+  canvas {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: transparent;
+    pointer-events: none;
+  }
+</style>
+</head>
+<body>
+
+<canvas id="fireworks"></canvas>
+
+<script>
+const canvas = document.getElementById("fireworks");
+const ctx = canvas.getContext("2d");
+canvas.width = window.innerWidth;
+canvas.height = window.innerHeight;
+
+window.addEventListener("resize", () => {
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+});
+
+class Firework {
+  constructor(x, y) {
+    this.x = x;
+    this.y = y;
+    this.particles = [];
+    this.createParticles();
+  }
+
+  createParticles() {
+    const count = 120;
+    for (let i = 0; i < count; i++) {
+      const angle = (Math.PI * 2 * i) / count;
+      const speed = Math.random() * 5 + 2;
+      const hue = 270 + Math.random() * 20; // purple hue range
+      this.particles.push({
+        x: this.x,
+        y: this.y,
+        vx: Math.cos(angle) * speed,
+        vy: Math.sin(angle) * speed,
+        alpha: 1,
+        color: `hsl(${hue}, 100%, 65%)`,
+        size: Math.random() * 2 + 1
+      });
+    }
+  }
+
+  update() {
+    this.particles.forEach(p => {
+      p.x += p.vx;
+      p.y += p.vy;
+      p.vy += 0.03; // gentle gravity
+      p.alpha -= 0.015; // fade slower for spark effect
+    });
+    this.particles = this.particles.filter(p => p.alpha > 0);
+  }
+
+  draw(ctx) {
+    this.particles.forEach(p => {
+      ctx.globalAlpha = p.alpha;
+      const gradient = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, p.size * 4);
+      gradient.addColorStop(0, p.color);
+      gradient.addColorStop(1, "transparent");
+      ctx.fillStyle = gradient;
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+      ctx.fill();
+    });
+    ctx.globalAlpha = 1;
+  }
+}
+
+let fireworks = [];
+
+function createFirework() {
+  const x = Math.random() * canvas.width;
+  const y = Math.random() * (canvas.height / 2);
+  fireworks.push(new Firework(x, y));
+}
+
+function animate() {
+  requestAnimationFrame(animate);
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  fireworks.forEach((fw, i) => {
+    fw.update();
+    fw.draw(ctx);
+    if (fw.particles.length === 0) fireworks.splice(i, 1);
+  });
+}
+
+// launch one immediately and then every 5 seconds
+createFirework();
+setInterval(createFirework, 5000);
+
+animate();
+</script>
+
+</body>
+</html>
